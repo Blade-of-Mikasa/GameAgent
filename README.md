@@ -98,27 +98,52 @@ SDK 单独限制执行确认时间（默认 2 秒），同时遵守游戏窗口�
 
 ## 真实模型配置
 
-复制 `.env.example` 为 `.env`，设置：
+默认提供商为 DeepSeek，从进程环境读取 `DEEPSEEK_API_KEY`。
+已经配置该全局环境变量时，直接运行：
+
+```sh
+npm run start:live
+```
+
+`start:live` 显式启用真实模型，即使 `.env` 中设置了离线模式。
+普通 `npm start` 仍默认离线，不会仅因存在密钥而自动发起 API 调用。
+
+默认模型为 `deepseek-flash`，通过 Pi 自带的 DeepSeek 提供商连接
+[`https://api.deepseek.com`](https://api-docs.deepseek.com/)。
+真实模式使用模型工具选择动作，游戏接入仍是本地模拟器。
+缺少所选提供商的密钥或模型不存在会明确失败，不会退回离线策略。
+密钥不写入配置文件、对局上下文和运行日志。
+
+如果希望普通 `npm start` 也启用真实模型，可复制 `.env.example` 为 `.env`，设置：
 
 ```dotenv
 GAME_AGENT_MODE=live
-GAME_AGENT_MODEL=claude-sonnet-4-6
-ANTHROPIC_API_KEY=your-key
+GAME_AGENT_PROVIDER=deepseek
+GAME_AGENT_MODEL=deepseek-flash
 GAME_AGENT_BUDGET_MS=10000
 ```
 
-执行 `npm start` 会读取 `.env`。真实模式会调用 Anthropic API，游戏接入仍是
-本地模拟器。缺少密钥或模型不存在会明确失败；不会退回离线策略。
-运行编译产物时，可用 `node --env-file=.env dist/src/app/main.js`。
+无需将已有的全局密钥复制到 `.env`。Windows 中刚设置的用户环境变量，
+需要重新打开终端才能被继承；也可以仅加载到当前 PowerShell 进程：
 
-| 环境变量               | 默认值              | 含义                                         |
-| ---------------------- | ------------------- | -------------------------------------------- |
-| `GAME_AGENT_MODE`      | `offline`           | `offline` 或 `live`                          |
-| `GAME_AGENT_MODEL`     | `claude-sonnet-4-6` | 真实模式的 Anthropic 模型 ID                 |
-| `GAME_AGENT_BUDGET_MS` | `10000`             | 每次决策的最大时间，包含排队                 |
-| `GAME_AGENT_RUNS_DIR`  | `runs`              | 运行记录根目录                               |
-| `GAME_AGENT_TURNS`     | `3`                 | 模拟对局回合数，1–1000                       |
-| `GAME_AGENT_STRATEGY`  | `prefer_attack`     | 离线模式可选 `first_legal` / `prefer_attack` |
+```powershell
+$env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable("DEEPSEEK_API_KEY", "User")
+npm run start:live
+```
+
+运行编译产物时，可用 `node --env-file-if-exists=.env dist/src/app/main.js --live`。
+Anthropic 仍可通过 `GAME_AGENT_PROVIDER=anthropic`、
+`GAME_AGENT_MODEL=claude-sonnet-4-6` 和环境变量 `ANTHROPIC_API_KEY` 使用。
+
+| 环境变量               | 默认值           | 含义                                                      |
+| ---------------------- | ---------------- | --------------------------------------------------------- |
+| `GAME_AGENT_MODE`      | `offline`        | `offline` 或 `live`                                       |
+| `GAME_AGENT_PROVIDER`  | `deepseek`       | `deepseek` 或 `anthropic`                                 |
+| `GAME_AGENT_MODEL`     | `deepseek-flash` | 所选提供商的模型 ID；Anthropic 默认为 `claude-sonnet-4-6` |
+| `GAME_AGENT_BUDGET_MS` | `10000`          | 每次决策的最大时间，包含排队                              |
+| `GAME_AGENT_RUNS_DIR`  | `runs`           | 运行记录根目录                                            |
+| `GAME_AGENT_TURNS`     | `3`              | 模拟对局回合数，1–1000                                    |
+| `GAME_AGENT_STRATEGY`  | `prefer_attack`  | 离线模式可选 `first_legal` / `prefer_attack`              |
 
 Pi 依赖固定版本并由 lockfile 锁定，采用当前的
 [`@earendil-works/pi-agent-core`](https://github.com/earendil-works/pi/tree/main/packages/agent)

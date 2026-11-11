@@ -1,5 +1,8 @@
+import { MODEL_PROVIDERS, type ModelProvider } from "../kernel/index.js";
+
 export interface AppConfig {
   mode: "offline" | "live";
+  provider: ModelProvider;
   model: string;
   apiKey?: string;
   decisionBudgetMs: number;
@@ -20,21 +23,30 @@ function positiveInteger(
   return number;
 }
 
-export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const mode = env.GAME_AGENT_MODE ?? "offline";
+export function readConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  options: { live?: boolean } = {},
+): AppConfig {
+  const mode = options.live ? "live" : (env.GAME_AGENT_MODE ?? "offline");
   if (mode !== "offline" && mode !== "live")
     throw new Error("GAME_AGENT_MODE must be offline or live");
-  if (mode === "live" && !env.ANTHROPIC_API_KEY?.trim())
-    throw new Error("Live mode requires ANTHROPIC_API_KEY");
+  const provider = env.GAME_AGENT_PROVIDER ?? "deepseek";
+  if (provider !== "deepseek" && provider !== "anthropic")
+    throw new Error("GAME_AGENT_PROVIDER must be deepseek or anthropic");
+  const providerConfig = MODEL_PROVIDERS[provider];
+  const apiKey = env[providerConfig.apiKeyEnvironmentVariable]?.trim();
+  if (mode === "live" && !apiKey)
+    throw new Error(
+      `Live mode requires ${providerConfig.apiKeyEnvironmentVariable}`,
+    );
   const offlineStrategy = env.GAME_AGENT_STRATEGY ?? "prefer_attack";
   if (offlineStrategy !== "first_legal" && offlineStrategy !== "prefer_attack")
     throw new Error("Unknown GAME_AGENT_STRATEGY");
   return {
     mode,
-    model: env.GAME_AGENT_MODEL ?? "claude-sonnet-4-6",
-    ...(mode === "live" && env.ANTHROPIC_API_KEY
-      ? { apiKey: env.ANTHROPIC_API_KEY }
-      : {}),
+    provider,
+    model: env.GAME_AGENT_MODEL ?? providerConfig.defaultModel,
+    ...(mode === "live" && apiKey ? { apiKey } : {}),
     decisionBudgetMs: positiveInteger(
       env.GAME_AGENT_BUDGET_MS,
       10_000,

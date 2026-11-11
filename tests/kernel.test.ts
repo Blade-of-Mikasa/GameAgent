@@ -151,7 +151,7 @@ test("live mode fails clearly without credentials and never falls back to a fake
   await sdk.start();
   await assert.rejects(
     createKernel({ mode: "live" }).decide(sdk.getPendingRequests()[0]!),
-    /ANTHROPIC_API_KEY/,
+    /DEEPSEEK_API_KEY/,
   );
   await sdk.stop();
 });

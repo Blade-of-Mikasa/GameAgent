@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { parseArgs } from "node:util";
 import { createKernel, type DecisionUsage } from "../kernel/index.js";
 import { SimulatorAdapter } from "../sdk/adapters/simulator.js";
 import { createSDK } from "../sdk/index.js";
@@ -19,6 +20,7 @@ export async function runSimulation(config: AppConfig, signal?: AbortSignal) {
   );
   const kernel = createKernel({
     mode: config.mode,
+    provider: config.provider,
     model: config.model,
     ...(config.apiKey ? { apiKey: config.apiKey } : {}),
     offlineStrategy: config.offlineStrategy,
@@ -48,7 +50,9 @@ export async function runSimulation(config: AppConfig, signal?: AbortSignal) {
     const state = sdk.getState();
     const summary = {
       mode: config.mode,
-      strategy: config.offlineStrategy,
+      provider: config.mode === "live" ? config.provider : "offline",
+      model: config.mode === "live" ? config.model : "offline-game-policy",
+      strategy: config.mode === "offline" ? config.offlineStrategy : "model",
       completed: state?.phase === "finished",
       winnerId: state?.winnerId ?? null,
       playerId: state?.playerId ?? null,
@@ -81,7 +85,13 @@ async function main(): Promise<void> {
   process.once("SIGINT", interrupt);
   process.once("SIGTERM", interrupt);
   try {
-    const { summary } = await runSimulation(readConfig(), controller.signal);
+    const { values } = parseArgs({
+      options: { live: { type: "boolean", default: false } },
+    });
+    const { summary } = await runSimulation(
+      readConfig(process.env, values),
+      controller.signal,
+    );
     console.log(JSON.stringify(summary, null, 2));
     if (!summary.completed && !process.exitCode) process.exitCode = 1;
   } finally {

@@ -1,8 +1,10 @@
 import { Agent, type AgentMessage } from "@earendil-works/pi-agent-core";
 import { createModels } from "@earendil-works/pi-ai";
 import { anthropicProvider } from "@earendil-works/pi-ai/providers/anthropic";
+import { deepseekProvider } from "@earendil-works/pi-ai/providers/deepseek";
 import type { Action, DecisionRequest } from "../contracts/index.js";
 import type { DecisionContext, RuleBook } from "./context.js";
+import { MODEL_PROVIDERS, type ModelProvider } from "./config.js";
 import { createOfflineModel, type OfflineStrategy } from "./offline.js";
 import { decisionPrompt } from "./prompts/decision.js";
 import { SYSTEM_PROMPT } from "./prompts/system.js";
@@ -19,6 +21,8 @@ export interface KernelTrace {
 export interface DecisionUsage {
   requestId: string;
   mode: "offline" | "live";
+  provider: string;
+  model: string;
   durationMs: number;
   inputTokens: number;
   outputTokens: number;
@@ -31,6 +35,7 @@ export interface DecisionUsage {
 
 export interface RuntimeOptions {
   mode?: "offline" | "live";
+  provider?: ModelProvider;
   model?: string;
   apiKey?: string;
   offlineStrategy?: OfflineStrategy;
@@ -107,6 +112,8 @@ export class PiRuntime {
     const usage: DecisionUsage = {
       requestId: request.id,
       mode,
+      provider: transport.model.provider,
+      model: transport.model.id,
       durationMs: 0,
       inputTokens: 0,
       outputTokens: 0,
@@ -171,13 +178,17 @@ export class PiRuntime {
   }
 
   private liveModel() {
-    if (!this.options.apiKey)
-      throw new Error("Live mode requires ANTHROPIC_API_KEY");
+    const provider = this.options.provider ?? "deepseek";
+    const config = MODEL_PROVIDERS[provider];
+    if (!this.options.apiKey?.trim())
+      throw new Error(`Live mode requires ${config.apiKeyEnvironmentVariable}`);
     const models = createModels();
-    models.setProvider(anthropicProvider());
-    const id = this.options.model ?? "claude-sonnet-4-6";
-    const model = models.getModel("anthropic", id);
-    if (!model) throw new Error(`Unknown Anthropic model: ${id}`);
+    models.setProvider(
+      provider === "deepseek" ? deepseekProvider() : anthropicProvider(),
+    );
+    const id = this.options.model ?? config.defaultModel;
+    const model = models.getModel(provider, id);
+    if (!model) throw new Error(`Unknown ${config.name} model: ${id}`);
     return { models, model };
   }
 }

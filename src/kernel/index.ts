@@ -9,6 +9,7 @@ import { GameMemory } from "./memory.js";
 import { PiRuntime, type RuntimeOptions } from "./runtime.js";
 
 export type { DecisionUsage, KernelTrace } from "./runtime.js";
+export { MODEL_PROVIDERS, type ModelProvider } from "./config.js";
 
 export interface DecisionKernel {
   onEvent(event: GameEvent): void;

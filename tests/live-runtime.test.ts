@@ -80,6 +80,7 @@ test("live provider wiring forwards credentials and consumes a streamed tool cal
   try {
     const kernel = createKernel({
       mode: "live",
+      provider: "anthropic",
       apiKey: "fixture-api-key",
       onUsage: (entry) => usage.push(entry),
     });
