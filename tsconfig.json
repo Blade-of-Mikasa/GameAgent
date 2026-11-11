@@ -8,8 +8,10 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "noEmit": true,
-    "types": []
+    "types": ["node"]
   },
-  "include": ["src/contracts/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }
