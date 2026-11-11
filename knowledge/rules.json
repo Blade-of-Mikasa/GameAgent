@@ -1,0 +1,20 @@
+[
+  {
+    "id": "simulator-scope",
+    "title": "演示规则范围",
+    "text": "本资料仅用于确定性的双人模拟对局，不是完整三国杀规则。每回合玩家获得一张杀，只能选择当前决策窗口列出的动作。",
+    "tags": ["simulator", "scope", "play", "response"]
+  },
+  {
+    "id": "simulator-slash",
+    "title": "模拟杀",
+    "text": "在模拟器中，对对手使用杀会令对手失去一点体力；本版本没有闪、距离、技能和濒死结算。",
+    "tags": ["杀", "play_card", "attack", "play"]
+  },
+  {
+    "id": "simulator-pass",
+    "title": "模拟跳过",
+    "text": "在模拟器中跳过本回合会受到对手一点伤害。达到回合上限或有人体力归零时结束，体力较高者获胜；平局判对手获胜。",
+    "tags": ["pass", "胜利", "play"]
+  }
+]
