@@ -1,0 +1,2 @@
+# README 的历史版本含 NUL 字符，强制按文本展示差异。
+/README.md text diff
